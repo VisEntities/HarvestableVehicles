@@ -1,6 +1,6 @@
 ﻿/*
  * Copyright (C) 2024 Game4Freak.io
- * Your use of this mod indicates acceptance of the Game4Freak EULA.
+ * This mod is provided under the Game4Freak EULA.
  * Full legal terms can be found at https://game4freak.io/eula/
  */
 
@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Oxide.Plugins
 {
     [Info("Harvestable Vehicles", "VisEntities", "1.0.0")]
-    [Description(" ")]
+    [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
         #region Fields
@@ -28,6 +28,9 @@ namespace Oxide.Plugins
         {
             [JsonProperty("Version")]
             public string Version { get; set; }
+
+            [JsonProperty("Gathering Tool Short Names")]
+            public List<string> GatheringToolShortNames { get; set; }
 
             [JsonProperty("Harvestable Vehicles")]
             public List<HarvestableVehicleConfig> HarvestableVehicles { get; set; }
@@ -50,8 +53,8 @@ namespace Oxide.Plugins
 
         public class ResourceConfig
         {
-            [JsonProperty("Item Shortname")]
-            public string ItemShortname { get; set; }
+            [JsonProperty("Item Short Name")]
+            public string ItemShortName { get; set; }
 
             [JsonProperty("Amount")]
             public int Amount { get; set; }
@@ -111,6 +114,11 @@ namespace Oxide.Plugins
             return new Configuration
             {
                 Version = Version.ToString(),
+                GatheringToolShortNames = new List<string>
+                {
+                    "hammer.salvaged",
+                    "jackhammer"
+                },
                 HarvestableVehicles = new List<HarvestableVehicleConfig>
                 {
                     new HarvestableVehicleConfig
@@ -124,12 +132,12 @@ namespace Oxide.Plugins
                         {
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.fragments",
+                                ItemShortName = "metal.fragments",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.refined",
+                                ItemShortName = "metal.refined",
                                 Amount = 1
                             }
                         },
@@ -152,17 +160,17 @@ namespace Oxide.Plugins
                         {
                             new ResourceConfig
                             {
-                                ItemShortname = "cloth",
+                                ItemShortName = "cloth",
                                 Amount = 10
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.fragments",
+                                ItemShortName = "metal.fragments",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "rope",
+                                ItemShortName = "rope",
                                 Amount = 1
                             }
                         },
@@ -186,12 +194,12 @@ namespace Oxide.Plugins
                         {
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.fragments",
+                                ItemShortName = "metal.fragments",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.refined",
+                                ItemShortName = "metal.refined",
                                 Amount = 1
                             }
                         },
@@ -214,22 +222,22 @@ namespace Oxide.Plugins
                         {
                             new ResourceConfig
                             {
-                                ItemShortname = "wood",
+                                ItemShortName = "wood",
                                 Amount = 10
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.fragments",
+                                ItemShortName = "metal.fragments",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "cloth",
+                                ItemShortName = "cloth",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "rope",
+                                ItemShortName = "rope",
                                 Amount = 1
                             }
                         },
@@ -254,12 +262,12 @@ namespace Oxide.Plugins
                         {
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.fragments",
+                                ItemShortName = "metal.fragments",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.refined",
+                                ItemShortName = "metal.refined",
                                 Amount = 1
                             }
                         },
@@ -294,12 +302,12 @@ namespace Oxide.Plugins
                         {
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.fragments",
+                                ItemShortName = "metal.fragments",
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
-                                ItemShortname = "metal.refined",
+                                ItemShortName = "metal.refined",
                                 Amount = 1
                             }
                         },
@@ -347,6 +355,10 @@ namespace Oxide.Plugins
             if (player == null || player.IsNpc)
                 return;
 
+            Item item = player.GetActiveItem();
+            if (item == null || item.info.category != ItemCategory.Tool || !_config.GatheringToolShortNames.Contains(item.info.shortname))
+                return;
+
             if (!PermissionUtil.HasPermission(player, PermissionUtil.USE))
                 return;
 
@@ -373,7 +385,7 @@ namespace Oxide.Plugins
 
                 if (amountToGive > 0)
                 {
-                    Item item = ItemManager.CreateByName(resource.ItemShortname, amountToGive);
+                    Item item = ItemManager.CreateByName(resource.ItemShortName, amountToGive);
                     if (item != null)
                     {
                         player.GiveItem(item, BaseEntity.GiveItemReason.ResourceHarvested);
