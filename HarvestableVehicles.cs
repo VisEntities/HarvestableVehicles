@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.0.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.1.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -358,6 +358,16 @@ namespace Oxide.Plugins
             Item item = player.GetActiveItem();
             if (item == null || item.info.category != ItemCategory.Tool || !_config.GatheringToolShortNames.Contains(item.info.shortname))
                 return;
+
+            BaseLock baseLock = entity.GetSlot(BaseEntity.Slot.Lock) as BaseLock;
+            if (baseLock != null)
+            {
+                CodeLock codeLock = baseLock as CodeLock;
+                if (codeLock != null && !codeLock.whitelistPlayers.Contains(player.userID))
+                    return;
+                else if (baseLock.OwnerID != player.userID)
+                    return;
+            }
 
             if (!PermissionUtil.HasPermission(player, PermissionUtil.USE))
                 return;
