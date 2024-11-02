@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.1.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.2.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -55,6 +55,9 @@ namespace Oxide.Plugins
         {
             [JsonProperty("Item Short Name")]
             public string ItemShortName { get; set; }
+
+            [JsonProperty("Skin Id")]
+            public ulong SkinId { get; set; }
 
             [JsonProperty("Amount")]
             public int Amount { get; set; }
@@ -161,16 +164,19 @@ namespace Oxide.Plugins
                             new ResourceConfig
                             {
                                 ItemShortName = "cloth",
+                                SkinId = 0,
                                 Amount = 10
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
+                                SkinId = 0,
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "rope",
+                                SkinId = 0,
                                 Amount = 1
                             }
                         },
@@ -195,11 +201,13 @@ namespace Oxide.Plugins
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
+                                SkinId = 0,
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
+                                SkinId = 0,
                                 Amount = 1
                             }
                         },
@@ -223,21 +231,25 @@ namespace Oxide.Plugins
                             new ResourceConfig
                             {
                                 ItemShortName = "wood",
+                                SkinId = 0,
                                 Amount = 10
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
+                                SkinId = 0,
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "cloth",
+                                SkinId = 0,
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "rope",
+                                SkinId = 0,
                                 Amount = 1
                             }
                         },
@@ -263,11 +275,13 @@ namespace Oxide.Plugins
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
+                                SkinId = 0,
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
+                                SkinId = 0,
                                 Amount = 1
                             }
                         },
@@ -303,11 +317,13 @@ namespace Oxide.Plugins
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
+                                SkinId = 0,
                                 Amount = 5
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
+                                SkinId = 0,
                                 Amount = 1
                             }
                         },
@@ -395,7 +411,7 @@ namespace Oxide.Plugins
 
                 if (amountToGive > 0)
                 {
-                    Item item = ItemManager.CreateByName(resource.ItemShortName, amountToGive);
+                    Item item = ItemManager.CreateByName(resource.ItemShortName, amountToGive, resource.SkinId);
                     if (item != null)
                     {
                         player.GiveItem(item, BaseEntity.GiveItemReason.ResourceHarvested);
