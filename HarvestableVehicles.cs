@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.2.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.3.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -59,8 +59,11 @@ namespace Oxide.Plugins
             [JsonProperty("Skin Id")]
             public ulong SkinId { get; set; }
 
-            [JsonProperty("Amount")]
-            public int Amount { get; set; }
+            [JsonProperty("Minimum Amount")]
+            public int MinimumAmount { get; set; }
+
+            [JsonProperty("Maximum Amount")]
+            public int MaximumAmount { get; set; }
         }
 
         public class YieldConfig
@@ -108,6 +111,25 @@ namespace Oxide.Plugins
             if (string.Compare(_config.Version, "1.0.0") < 0)
                 _config = defaultConfig;
 
+
+            if (string.Compare(_config.Version, "1.3.0") < 0)
+            {
+                for (int i = 0; i < _config.HarvestableVehicles.Count; i++)
+                {
+                    HarvestableVehicleConfig vehicleConfig = _config.HarvestableVehicles[i];
+                    HarvestableVehicleConfig defaultVehicleConfig = defaultConfig.HarvestableVehicles[i];
+
+                    for (int j = 0; j < vehicleConfig.Resources.Count; j++)
+                    {
+                        ResourceConfig resourceConfig = vehicleConfig.Resources[j];
+                        ResourceConfig defaultResourceConfig = defaultVehicleConfig.Resources[j];
+
+                        resourceConfig.MinimumAmount = defaultResourceConfig.MinimumAmount;
+                        resourceConfig.MaximumAmount = defaultResourceConfig.MaximumAmount;
+                    }
+                }
+            }
+
             PrintWarning("Config update complete! Updated from version " + _config.Version + " to " + Version.ToString());
             _config.Version = Version.ToString();
         }
@@ -136,12 +158,14 @@ namespace Oxide.Plugins
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 10
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
-                                Amount = 1
+                                MinimumAmount = 1,
+                                MaximumAmount = 5
                             }
                         },
                         Yield = new YieldConfig
@@ -165,19 +189,22 @@ namespace Oxide.Plugins
                             {
                                 ItemShortName = "cloth",
                                 SkinId = 0,
-                                Amount = 10
+                                MinimumAmount = 10,
+                                MaximumAmount = 15
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 10
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "rope",
                                 SkinId = 0,
-                                Amount = 1
+                                MinimumAmount = 1,
+                                MaximumAmount = 3
                             }
                         },
                         Yield = new YieldConfig
@@ -202,13 +229,15 @@ namespace Oxide.Plugins
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 15
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 SkinId = 0,
-                                Amount = 1
+                                MinimumAmount = 1,
+                                MaximumAmount = 5
                             }
                         },
                         Yield = new YieldConfig
@@ -232,25 +261,29 @@ namespace Oxide.Plugins
                             {
                                 ItemShortName = "wood",
                                 SkinId = 0,
-                                Amount = 10
+                                MinimumAmount = 10,
+                                MaximumAmount = 20
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 15
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "cloth",
                                 SkinId = 0,
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 10
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "rope",
                                 SkinId = 0,
-                                Amount = 1
+                                MinimumAmount = 1,
+                                MaximumAmount = 3
                             }
                         },
                         Yield = new YieldConfig
@@ -276,13 +309,15 @@ namespace Oxide.Plugins
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 15
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 SkinId = 0,
-                                Amount = 1
+                                MinimumAmount = 1,
+                                MaximumAmount = 5
                             }
                         },
                         Yield = new YieldConfig
@@ -318,13 +353,15 @@ namespace Oxide.Plugins
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
-                                Amount = 5
+                                MinimumAmount = 5,
+                                MaximumAmount = 10
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 SkinId = 0,
-                                Amount = 1
+                                MinimumAmount = 1,
+                                MaximumAmount = 5
                             }
                         },
                         Yield = new YieldConfig
@@ -407,7 +444,7 @@ namespace Oxide.Plugins
         {
             foreach (ResourceConfig resource in vehicleConfig.Resources)
             {
-                int amountToGive = GetRandomizedAmount(resource.Amount, vehicleConfig.Yield);
+                int amountToGive = GetRandomizedAmount(resource.MinimumAmount, resource.MaximumAmount, vehicleConfig.Yield);
 
                 if (amountToGive > 0)
                 {
@@ -420,8 +457,9 @@ namespace Oxide.Plugins
             }
         }
 
-        private int GetRandomizedAmount(int baseAmount, YieldConfig yieldConfig)
+        private int GetRandomizedAmount(int minAmount, int maxAmount, YieldConfig yieldConfig)
         {
+            int baseAmount = _random.Next(minAmount, maxAmount + 1);
             int chance = _random.Next(0, 100);
 
             if (chance < yieldConfig.NoYieldProbability)
