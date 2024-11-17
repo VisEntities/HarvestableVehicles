@@ -6,11 +6,12 @@
 
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.3.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.4.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -29,11 +30,20 @@ namespace Oxide.Plugins
             [JsonProperty("Version")]
             public string Version { get; set; }
 
-            [JsonProperty("Gathering Tool Short Names")]
-            public List<string> GatheringToolShortNames { get; set; }
+            [JsonProperty("Gathering Tools")]
+            public List<GatheringToolConfig> GatheringTools { get; set; }
 
             [JsonProperty("Harvestable Vehicles")]
             public List<HarvestableVehicleConfig> HarvestableVehicles { get; set; }
+        }
+
+        public class GatheringToolConfig
+        {
+            [JsonProperty("Item Short Name")]
+            public string ItemShortName { get; set; }
+
+            [JsonProperty("Skin Id")]
+            public ulong SkinId { get; set; }
         }
 
         public class HarvestableVehicleConfig
@@ -111,7 +121,6 @@ namespace Oxide.Plugins
             if (string.Compare(_config.Version, "1.0.0") < 0)
                 _config = defaultConfig;
 
-
             if (string.Compare(_config.Version, "1.3.0") < 0)
             {
                 for (int i = 0; i < _config.HarvestableVehicles.Count; i++)
@@ -130,6 +139,11 @@ namespace Oxide.Plugins
                 }
             }
 
+            if (string.Compare(_config.Version, "1.4.0") < 0)
+            {
+                _config.GatheringTools = defaultConfig.GatheringTools;
+            }
+
             PrintWarning("Config update complete! Updated from version " + _config.Version + " to " + Version.ToString());
             _config.Version = Version.ToString();
         }
@@ -139,10 +153,18 @@ namespace Oxide.Plugins
             return new Configuration
             {
                 Version = Version.ToString(),
-                GatheringToolShortNames = new List<string>
+                GatheringTools = new List<GatheringToolConfig>
                 {
-                    "hammer.salvaged",
-                    "jackhammer"
+                    new GatheringToolConfig
+                    {
+                        ItemShortName = "hammer.salvaged",
+                        SkinId = 0
+                    },
+                    new GatheringToolConfig
+                    {
+                        ItemShortName = "jackhammer",
+                        SkinId = 0
+                    }
                 },
                 HarvestableVehicles = new List<HarvestableVehicleConfig>
                 {
@@ -301,7 +323,8 @@ namespace Oxide.Plugins
                         {
                             "motorbike",
                             "motorbike_sidecar",
-                            "pedalbike"
+                            "pedalbike",
+                            "pedaltrike"
                         },
                         Resources = new List<ResourceConfig>
                         {
@@ -409,7 +432,16 @@ namespace Oxide.Plugins
                 return;
 
             Item item = player.GetActiveItem();
-            if (item == null || item.info.category != ItemCategory.Tool || !_config.GatheringToolShortNames.Contains(item.info.shortname))
+            if (item == null || item.info.category != ItemCategory.Tool)
+                return;
+
+            GatheringToolConfig toolConfig = _config.GatheringTools
+                .FirstOrDefault(t => t.ItemShortName == item.info.shortname);
+
+            if (toolConfig == null || !_config.GatheringTools.Exists(t => t.ItemShortName == item.info.shortname))
+                return;
+
+            if (toolConfig.SkinId != 0 && item.skin != toolConfig.SkinId)
                 return;
 
             BaseLock baseLock = entity.GetSlot(BaseEntity.Slot.Lock) as BaseLock;
