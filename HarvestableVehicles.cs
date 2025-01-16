@@ -5,13 +5,13 @@
  */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.4.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.5.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -35,6 +35,9 @@ namespace Oxide.Plugins
 
             [JsonProperty("Harvestable Vehicles")]
             public List<HarvestableVehicleConfig> HarvestableVehicles { get; set; }
+
+            [JsonProperty("Rarity Weights")]
+            public Dictionary<Rarity, int> RarityWeights { get; set; }
         }
 
         public class GatheringToolConfig
@@ -54,9 +57,6 @@ namespace Oxide.Plugins
             [JsonProperty("Resources")]
             public List<ResourceConfig> Resources { get; set; }
 
-            [JsonProperty("Yield")]
-            public YieldConfig Yield { get; set; }
-
             [JsonProperty("Damage Increase Factor")]
             public float DamageIncreaseFactor { get; set; }
         }
@@ -74,21 +74,18 @@ namespace Oxide.Plugins
 
             [JsonProperty("Maximum Amount")]
             public int MaximumAmount { get; set; }
+
+            [JsonProperty("Rarity")]
+            [JsonConverter(typeof(StringEnumConverter))]
+            public Rarity Rarity { get; set; }
         }
 
-        public class YieldConfig
+        public enum Rarity
         {
-            [JsonProperty("No Yield Probability")]
-            public int NoYieldProbability { get; set; }
-
-            [JsonProperty("Normal Yield Probability")]
-            public int NormalYieldProbability { get; set; }
-
-            [JsonProperty("High Yield Probability")]
-            public int HighYieldProbability { get; set; }
-
-            [JsonProperty("High Yield Bonus")]
-            public float HighYieldBonus { get; set; }
+            Common,
+            Uncommon,
+            Rare,
+            VeryRare
         }
 
         protected override void LoadConfig()
@@ -144,6 +141,19 @@ namespace Oxide.Plugins
                 _config.GatheringTools = defaultConfig.GatheringTools;
             }
 
+            if (string.Compare(_config.Version, "1.5.0") < 0)
+            {
+                _config.RarityWeights = defaultConfig.RarityWeights;
+
+                foreach (HarvestableVehicleConfig vehicleConfig in _config.HarvestableVehicles)
+                {
+                    foreach (ResourceConfig resourceConfig in vehicleConfig.Resources)
+                    {
+                        resourceConfig.Rarity = Rarity.Common;
+                    }
+                }
+            }
+
             PrintWarning("Config update complete! Updated from version " + _config.Version + " to " + Version.ToString());
             _config.Version = Version.ToString();
         }
@@ -181,21 +191,16 @@ namespace Oxide.Plugins
                             {
                                 ItemShortName = "metal.fragments",
                                 MinimumAmount = 5,
-                                MaximumAmount = 10
+                                MaximumAmount = 10,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 MinimumAmount = 1,
-                                MaximumAmount = 5
+                                MaximumAmount = 5,
+                                Rarity = Rarity.Rare
                             }
-                        },
-                        Yield = new YieldConfig
-                        {
-                            NoYieldProbability = 70,
-                            NormalYieldProbability = 25,
-                            HighYieldProbability = 5,
-                            HighYieldBonus = 1.5f
                         },
                         DamageIncreaseFactor = 5
                     },
@@ -212,29 +217,25 @@ namespace Oxide.Plugins
                                 ItemShortName = "cloth",
                                 SkinId = 0,
                                 MinimumAmount = 10,
-                                MaximumAmount = 15
+                                MaximumAmount = 15,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
                                 MinimumAmount = 5,
-                                MaximumAmount = 10
+                                MaximumAmount = 10,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "rope",
                                 SkinId = 0,
                                 MinimumAmount = 1,
-                                MaximumAmount = 3
+                                MaximumAmount = 3,
+                                Rarity = Rarity.Common
                             }
-                        },
-                        Yield = new YieldConfig
-                        {
-                            NoYieldProbability = 70,
-                            NormalYieldProbability = 25,
-                            HighYieldProbability = 5,
-                            HighYieldBonus = 1.5f
                         },
                         DamageIncreaseFactor = 5
                     },
@@ -252,22 +253,17 @@ namespace Oxide.Plugins
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
                                 MinimumAmount = 5,
-                                MaximumAmount = 15
+                                MaximumAmount = 15,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 SkinId = 0,
                                 MinimumAmount = 1,
-                                MaximumAmount = 5
+                                MaximumAmount = 5,
+                                Rarity = Rarity.Rare
                             }
-                        },
-                        Yield = new YieldConfig
-                        {
-                            NoYieldProbability = 70,
-                            NormalYieldProbability = 25,
-                            HighYieldProbability = 5,
-                            HighYieldBonus = 1.5f
                         },
                         DamageIncreaseFactor = 5
                     },
@@ -284,36 +280,33 @@ namespace Oxide.Plugins
                                 ItemShortName = "wood",
                                 SkinId = 0,
                                 MinimumAmount = 10,
-                                MaximumAmount = 20
+                                MaximumAmount = 20,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
                                 MinimumAmount = 5,
-                                MaximumAmount = 15
+                                MaximumAmount = 15,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "cloth",
                                 SkinId = 0,
                                 MinimumAmount = 5,
-                                MaximumAmount = 10
+                                MaximumAmount = 10,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "rope",
                                 SkinId = 0,
                                 MinimumAmount = 1,
-                                MaximumAmount = 3
+                                MaximumAmount = 3,
+                                Rarity = Rarity.Common
                             }
-                        },
-                        Yield = new YieldConfig
-                        {
-                            NoYieldProbability = 70,
-                            NormalYieldProbability = 25,
-                            HighYieldProbability = 5,
-                            HighYieldBonus = 1.5f
                         },
                         DamageIncreaseFactor = 5
                     },
@@ -333,22 +326,17 @@ namespace Oxide.Plugins
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
                                 MinimumAmount = 5,
-                                MaximumAmount = 15
+                                MaximumAmount = 15,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 SkinId = 0,
                                 MinimumAmount = 1,
-                                MaximumAmount = 5
+                                MaximumAmount = 5,
+                                Rarity = Rarity.Rare
                             }
-                        },
-                        Yield = new YieldConfig
-                        {
-                            NoYieldProbability = 70,
-                            NormalYieldProbability = 25,
-                            HighYieldProbability = 5,
-                            HighYieldBonus = 1.5f
                         },
                         DamageIncreaseFactor = 5
                     },
@@ -377,25 +365,27 @@ namespace Oxide.Plugins
                                 ItemShortName = "metal.fragments",
                                 SkinId = 0,
                                 MinimumAmount = 5,
-                                MaximumAmount = 10
+                                MaximumAmount = 10,
+                                Rarity = Rarity.Common
                             },
                             new ResourceConfig
                             {
                                 ItemShortName = "metal.refined",
                                 SkinId = 0,
                                 MinimumAmount = 1,
-                                MaximumAmount = 5
+                                MaximumAmount = 5,
+                                Rarity = Rarity.Rare
                             }
-                        },
-                        Yield = new YieldConfig
-                        {
-                            NoYieldProbability = 70,
-                            NormalYieldProbability = 25,
-                            HighYieldProbability = 5,
-                            HighYieldBonus = 1.5f
                         },
                         DamageIncreaseFactor = 5
                     },
+                },
+                RarityWeights = new Dictionary<Rarity, int>
+                {
+                    { Rarity.Common, 60 },
+                    { Rarity.Uncommon, 25 },
+                    { Rarity.Rare, 10 },
+                    { Rarity.VeryRare, 5 }
                 }
             };
         }
@@ -474,38 +464,53 @@ namespace Oxide.Plugins
 
         private void DoGather(BaseEntity entity, BasePlayer player, HarvestableVehicleConfig vehicleConfig)
         {
-            foreach (ResourceConfig resource in vehicleConfig.Resources)
-            {
-                int amountToGive = GetRandomizedAmount(resource.MinimumAmount, resource.MaximumAmount, vehicleConfig.Yield);
+            List<ResourceConfig> availableResources = vehicleConfig.Resources;
+            if (availableResources.Count == 0)
+                return;
 
-                if (amountToGive > 0)
-                {
-                    Item item = ItemManager.CreateByName(resource.ItemShortName, amountToGive, resource.SkinId);
-                    if (item != null)
-                    {
-                        player.GiveItem(item, BaseEntity.GiveItemReason.ResourceHarvested);
-                    }
-                }
+            ResourceConfig selectedResource = SelectResourceByRarity(availableResources);
+            if (selectedResource == null)
+                return;
+
+            int amountToGive = _random.Next(selectedResource.MinimumAmount, selectedResource.MaximumAmount + 1);
+            if (amountToGive <= 0)
+                return;
+
+            Item item = ItemManager.CreateByName(selectedResource.ItemShortName, amountToGive, selectedResource.SkinId);
+            if (item != null)
+            {
+                player.GiveItem(item, BaseEntity.GiveItemReason.ResourceHarvested);
             }
         }
 
-        private int GetRandomizedAmount(int minAmount, int maxAmount, YieldConfig yieldConfig)
+        private ResourceConfig SelectResourceByRarity(List<ResourceConfig> resources)
         {
-            int baseAmount = _random.Next(minAmount, maxAmount + 1);
-            int chance = _random.Next(0, 100);
+            int totalWeight = 0;
+            foreach (ResourceConfig resource in resources)
+            {
+                if (_config.RarityWeights.TryGetValue(resource.Rarity, out int weight))
+                    totalWeight += weight;
+            }
 
-            if (chance < yieldConfig.NoYieldProbability)
+            if (totalWeight <= 0)
+                return null;
+
+            int randomValue = _random.Next(0, totalWeight);
+            int cumulativeWeight = 0;
+
+            foreach (var resource in resources)
             {
-                return 0;
+                if (_config.RarityWeights.TryGetValue(resource.Rarity, out int weight))
+                {
+                    cumulativeWeight += weight;
+                    if (randomValue < cumulativeWeight)
+                    {
+                        return resource;
+                    }
+                }
             }
-            else if (chance < yieldConfig.NoYieldProbability + yieldConfig.NormalYieldProbability)
-            {
-                return baseAmount;
-            }
-            else
-            {
-                return Mathf.CeilToInt(baseAmount * yieldConfig.HighYieldBonus);
-            }
+
+            return null;
         }
 
         #endregion Resource Gathering
