@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.5.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.6.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -65,6 +65,9 @@ namespace Oxide.Plugins
         {
             [JsonProperty("Item Short Name")]
             public string ItemShortName { get; set; }
+
+            [JsonProperty("Display Name")]
+            public string DisplayName { get; set; }
 
             [JsonProperty("Skin Id")]
             public ulong SkinId { get; set; }
@@ -477,6 +480,9 @@ namespace Oxide.Plugins
                 return;
 
             Item item = ItemManager.CreateByName(selectedResource.ItemShortName, amountToGive, selectedResource.SkinId);
+            if (selectedResource.DisplayName != null)
+                item.name = selectedResource.DisplayName;
+
             if (item != null)
             {
                 player.GiveItem(item, BaseEntity.GiveItemReason.ResourceHarvested);
