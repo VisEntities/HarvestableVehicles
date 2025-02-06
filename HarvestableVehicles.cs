@@ -6,12 +6,13 @@
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Rust;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.6.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.6.1")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -525,6 +526,13 @@ namespace Oxide.Plugins
 
         private void ScaleDamage(HitInfo hitInfo, float damageIncreaseFactor)
         {
+            float baseDamage = hitInfo.damageTypes.Total();
+            if (baseDamage <= 0f)
+            {
+                baseDamage = 1f;
+                hitInfo.damageTypes.Set(DamageType.Blunt, baseDamage);
+            }
+
             if (damageIncreaseFactor != 1.0f)
             {
                 hitInfo.damageTypes.ScaleAll(damageIncreaseFactor);
