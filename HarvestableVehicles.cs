@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.6.1")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.7.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -82,14 +82,6 @@ namespace Oxide.Plugins
             [JsonProperty("Rarity")]
             [JsonConverter(typeof(StringEnumConverter))]
             public Rarity Rarity { get; set; }
-        }
-
-        public enum Rarity
-        {
-            Common,
-            Uncommon,
-            Rare,
-            VeryRare
         }
 
         protected override void LoadConfig()
@@ -422,7 +414,7 @@ namespace Oxide.Plugins
                 return;
 
             BasePlayer player = hitInfo.InitiatorPlayer;
-            if (player == null || player.IsNpc)
+            if (player == null || IsNPC(player))
                 return;
 
             Item item = player.GetActiveItem();
@@ -460,6 +452,30 @@ namespace Oxide.Plugins
                     break;
                 }
             }
+        }
+
+        // This hook is exposed by True PVE plugin (https://umod.org/plugins/true-pve)
+        private object CanEntityTakeDamage(BaseEntity entity, HitInfo hitInfo)
+        {
+            if (!(entity is BaseVehicle) && !(entity is HotAirBalloon))
+                return null;
+
+            BasePlayer player = hitInfo.InitiatorPlayer;
+            if (player == null || IsNPC(player))
+                return null;
+
+            Item item = player.GetActiveItem();
+            if (item == null || item.info.category != ItemCategory.Tool)
+                return null;
+
+            GatheringToolConfig toolConfig = _config.GatheringTools.FirstOrDefault(t => t.ItemShortName == item.info.shortname);
+            if (toolConfig == null)
+                return null;
+
+            if (toolConfig.SkinId != 0 && item.skin != toolConfig.SkinId)
+                return null;
+
+            return true;
         }
 
         #endregion Oxide Hooks
@@ -541,6 +557,18 @@ namespace Oxide.Plugins
 
         #endregion Damage Scaling
 
+        #region Enums
+
+        public enum Rarity
+        {
+            Common,
+            Uncommon,
+            Rare,
+            VeryRare
+        }
+
+        #endregion Enums
+
         #region Permissions
 
         private static class PermissionUtil
@@ -566,5 +594,14 @@ namespace Oxide.Plugins
         }
 
         #endregion Permissions
+
+        #region Helper Functions
+
+        public static bool IsNPC(BasePlayer player)
+        {
+            return player.IsNpc || !player.userID.IsSteamId();
+        }
+
+        #endregion Helper Functions
     }
 }
