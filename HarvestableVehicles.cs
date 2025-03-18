@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("Harvestable Vehicles", "VisEntities", "1.7.0")]
+    [Info("Harvestable Vehicles", "VisEntities", "1.8.0")]
     [Description("Lets players gather materials from vehicles.")]
     public class HarvestableVehicles : RustPlugin
     {
@@ -30,6 +30,9 @@ namespace Oxide.Plugins
         {
             [JsonProperty("Version")]
             public string Version { get; set; }
+
+            [JsonProperty("Prevent Harvesting Owned Vehicles")]
+            public bool PreventHarvestingOwnedVehicles { get; set; }
 
             [JsonProperty("Gathering Tools")]
             public List<GatheringToolConfig> GatheringTools { get; set; }
@@ -150,6 +153,11 @@ namespace Oxide.Plugins
                 }
             }
 
+            if (string.Compare(_config.Version, "1.8.0") < 0)
+            {
+                _config.PreventHarvestingOwnedVehicles = defaultConfig.PreventHarvestingOwnedVehicles;
+            }
+
             PrintWarning("Config update complete! Updated from version " + _config.Version + " to " + Version.ToString());
             _config.Version = Version.ToString();
         }
@@ -159,6 +167,7 @@ namespace Oxide.Plugins
             return new Configuration
             {
                 Version = Version.ToString(),
+                PreventHarvestingOwnedVehicles = true,
                 GatheringTools = new List<GatheringToolConfig>
                 {
                     new GatheringToolConfig
@@ -411,6 +420,9 @@ namespace Oxide.Plugins
                 return;
 
             if (entity.Health() <= 0)
+                return;
+
+            if (_config.PreventHarvestingOwnedVehicles && entity.OwnerID != 0UL)
                 return;
 
             BasePlayer player = hitInfo.InitiatorPlayer;
